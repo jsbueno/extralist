@@ -4,6 +4,8 @@
 from __future__ import unicode_literals
 from __future__ import division
 
+import sys
+
 import bisect
 
 try:
@@ -34,7 +36,8 @@ def chunk_sequence(sequence, size):
 
 class Page(object):
     __slots__ = "start end data".split()
-    
+
+
 class PagedList(MutableSequence):
     """
     Sequence designed for high performance inserting/deleting of elements in the middle
@@ -50,8 +53,9 @@ class PagedList(MutableSequence):
 
     """
     _lock_pagesize = False
-    def __init__(self, sequence=None, pagesize=1000):
+    def __init__(self, sequence=None, pagesize=1000, page_class=list):
         self.pagesize = pagesize
+        self.page_class = page_class
         self.pages = []
         self._fill(sequence)
         self._dirt_log = [] 
@@ -71,10 +75,10 @@ class PagedList(MutableSequence):
     def _fill(self, sequence):
         if not hasattr(sequence, "__len__"):
             for chunk in chunk_sequence(sequence, self.pagesize):
-                self._append_page(page)
+                self._append_page(self.page_class(page))
             return
         for page_start in range(0, len(sequence), self.pagesize):
-            self._append_page(sequence[page_start: page_start + self.pagesize])
+            self._append_page(self.page_class(sequence[page_start: page_start + self.pagesize]))
     
     def _append_page(self, chunk):
         page = Page()
@@ -83,8 +87,8 @@ class PagedList(MutableSequence):
         self.pages.append(page)
 
     def _adjust_dirt(self, page_number, amount):
-        dirt_record = bisect.bisect_left(self._dirt_log, page_number)
-        if not self._dirt_log or not self._dirt_log[dirt_record][0] == page_number:
+        dirt_record = bisect.bisect_left(self._dirt_log, [page_number, -sys.maxsize])
+        if len(self._dirt_log) <= dirt_record or not self._dirt_log[dirt_record][0] == page_number:
             bisect.insort(self._dirt_log, [page_number, amount])
         else:
             self._dirt_log[dirt_record][1] += amount
@@ -92,8 +96,8 @@ class PagedList(MutableSequence):
                 del self._dirt_log[dirt_record]
 
     def _local_offset(self, page_number):
-        dirt_record = bisect.bisect_left(self._dirt_log, page_number)
-        if not self._dirt_log or not self._dirt_log[dirt_record][0] == page_number:
+        dirt_record = bisect.bisect_left(self._dirt_log, [page_number, -sys.maxsize])
+        if len(self._dirt_log) <= dirt_record or not self._dirt_log[dirt_record][0] == page_number:
             return 0
         return self._dirt_log[dirt_record][1]
 
@@ -107,7 +111,7 @@ class PagedList(MutableSequence):
             # TODO: optimize this by enabling relative offset seeks:
             page_offset = self._get_offset_for_page(page_number)
 
-            element_index = (index - page_offset) % (page_number * self.pagesize)
+            element_index = (index - page_offset) - (page_number * self.pagesize)
             if 0 <= element_index < self.pagesize + self._local_offset(page_number):
                 break
             if element_index < 0:
