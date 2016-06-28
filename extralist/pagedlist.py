@@ -35,19 +35,19 @@ def chunk_sequence(sequence, size):
 class Page(object):
     __slots__ = "start end data".split()
     
-class SoftList(MutableSequence):
+class PagedList(MutableSequence):
     """
     Sequence designed for high performance inserting/deleting of elements in the middle
-    
+
     Python's list and other stdlib sequence types by default need a sequence of objects -
     so there is no easy sequence that allows arbitrary insertion or erasing of items
     in the middle of the body without a huge performance cost, as any insertion or
     deleting implies copying over all the remaining elements of the sequence to another
     position.
-    
-    SoftList amortizes that by holding several "pages" with sequence parts, so that each
+
+    PagedList amortizes that by holding several "pages" with sequence parts, so that each
     insertion only affects one page at a time.
-    
+
     """
     _lock_pagesize = False
     def __init__(self, sequence=None, pagesize=1000):
