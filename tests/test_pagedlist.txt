@@ -1,0 +1,36 @@
+>>> # Single item tests:
+... from extralist import PagedList
+>>> x = PagedList(list(range(100)), 10)
+>>> x[0]
+0
+>>> x[99]
+99
+>>> x[100] # doctest: +ELLIPSIS
+Traceback (most recent call last):
+     ...
+IndexError: ...
+>>> x[35]
+35
+>>> del x[35]
+>>> x[35]
+36
+>>> x[39]
+40
+>>> x[49]
+50
+>>> x[98]
+99
+>>> x[99] # doctest: +ELLIPSIS
+Traceback (most recent call last):
+     ...
+IndexError: ...
+>>> x.insert(48, "bla")
+>>> x[48]
+'bla'
+>>> x[49]
+49
+>>> x[50]
+50
+>>> x.insert(48, "ble")
+>>> x[50]
+49
