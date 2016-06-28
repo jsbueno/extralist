@@ -1,4 +1,4 @@
-Extra Seuence Types and Helpers
+Extra Sequence Types and Helpers
 ================================
 
 
