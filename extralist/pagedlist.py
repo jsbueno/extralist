@@ -28,7 +28,7 @@ def chunk_sequence(sequence, size):
         except StopIteration:
             break
         yield chunk
-    if ch:
+    if chunk:
         yield chunk
 
 
@@ -75,7 +75,7 @@ class PagedList(MutableSequence):
     def _fill(self, sequence):
         if not hasattr(sequence, "__len__"):
             for chunk in chunk_sequence(sequence, self.pagesize):
-                self._append_page(self.page_class(page))
+                self._append_page(self.page_class(chunk))
             return
         for page_start in range(0, len(sequence), self.pagesize):
             self._append_page(self.page_class(sequence[page_start: page_start + self.pagesize]))
@@ -133,21 +133,26 @@ class PagedList(MutableSequence):
                 break
             offset += dirt[1]
         return offset
-        
 
     def __getitem__(self, index):
         if isinstance(index, slice):
-            raise NotImplementedError()
+            s = index
+            start_page, start_number = self._get_indexes(s.start)
+            s_step = s.step or 1
+            if (s_step != 1):
+                s_stop = s.start + (s.stop - s.start) % s_step
+            else:
+                s_stop = s.stop
+            return self.__class__( (self[i] for i in range(s.start, s_stop, s_step)), self.pagesize, self.page_class)
+
         page_number, page_index = self._get_indexes(index)
         return self.pages[page_number].data[page_index]
-
 
     def __setitem__(self, index, value):
         if isinstance(index, slice):
             raise NotImplementedError()
         page_number, page_index = self._get_indexes(index)
         self.pages[page_number].data[page_index] = value
-
 
     def __delitem__(self, index):
         if isinstance(index, slice):
@@ -165,4 +170,4 @@ class PagedList(MutableSequence):
         self.pages[page_number].data.insert(page_index, value)
         self._adjust_dirt(page_number, +1)
 
-            
+
