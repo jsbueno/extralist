@@ -20,7 +20,7 @@ work with slices yet.
 there is a 250 fold __gain__ (25000%) in deleting consecutive elements one by one, and a 40 fold
 (36700%) performance __loss__ in random acess reading to elements on the same sequence afterwards.
 
-
+[WIP] getitem slice and negative indexes handling implemented
 
 ## Future
 Planned helpers/sequence types to be featured here:

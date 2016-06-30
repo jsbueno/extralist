@@ -32,11 +32,25 @@ def chunk_sequence(sequence, size):
         yield chunk
 
 
+class DefaultList(list):
+    def __init__(self, *args, default_factory=None):
+        super(DefaultList, self).__init__(*args)
+        self.default_factory = default_factory
 
+    def __getitem__(self, attr):
+        try:
+            return super(DefaultList, self).__getitem__(attr)
+        except IndexError:
+            return self.default_factory()
 
 class Page(object):
     __slots__ = "start end data".split()
 
+def _empty_page():
+    p = Page()
+    p.start = p.end = 0
+    p.data = []
+    return p
 
 class PagedList(MutableSequence):
     """
@@ -53,12 +67,30 @@ class PagedList(MutableSequence):
 
     """
     _lock_pagesize = False
+
     def __init__(self, sequence=None, pagesize=1000, page_class=list):
+        self._reset(pagesize, page_class)
+        self._fill(sequence)
+
+    def _reset(self, pagesize, page_class):
         self.pagesize = pagesize
         self.page_class = page_class
-        self.pages = []
-        self._fill(sequence)
-        self._dirt_log = [] 
+        # DefaultList is used because when computing slices that extend to
+        # self.END the page number will be one more than the actual existing pages.
+        # (and len(self.pages) is super-usefull to keep track of the actual number of
+        # pages
+        self.pages = DefaultList(default_factory=_empty_page)
+        self._dirt_log = []
+
+    @classmethod
+    def _from_pages(cls, pages, pagesize, page_class):
+        self = cls.__new__(cls)
+        self._reset(pagesize, page_class)
+        for i, page in enumerate(pages):
+            self._append_page(page)
+            if len(page) != pagesize:
+                self._dirt_log.append([i, len(page) - pagesize])
+        return self
 
     @property
     def pagesize(self):
@@ -79,7 +111,7 @@ class PagedList(MutableSequence):
             return
         for page_start in range(0, len(sequence), self.pagesize):
             self._append_page(self.page_class(sequence[page_start: page_start + self.pagesize]))
-    
+
     def _append_page(self, chunk):
         page = Page()
         page.start = len(self.pages) * self.pagesize
@@ -102,10 +134,9 @@ class PagedList(MutableSequence):
         return self._dirt_log[dirt_record][1]
 
     def _get_indexes(self, index):
-        if not self._dirt_log:
-            return index // self.pagesize, index % self.pagesize
-
         page_number= index // self.pagesize
+        if not self._dirt_log:
+            return page_number,  index % self.pagesize
 
         while True:
             # TODO: optimize this by enabling relative offset seeks:
@@ -120,10 +151,6 @@ class PagedList(MutableSequence):
                     raise IndexError
             else:
                 page_number += 1
-                if page_number >= len(self.pages):
-                    page_number -= 1 
-                    break
-
         return page_number, element_index
 
     def _get_offset_for_page(self, page_number):
@@ -134,17 +161,32 @@ class PagedList(MutableSequence):
             offset += dirt[1]
         return offset
 
+    def _get_slice_interval(self, slice_):
+        s_start, s_stop, s_step = slice_.indices(len(self))
+        s_stop = s_start + (s_stop - s_start) - (s_stop - s_start) % s_step
+
+        lower_page, start_index = self._get_indexes(s_start)
+        upper_page, end_index = self._get_indexes(s_stop)
+        middle_pages = list(range(lower_page + 1, upper_page))
+
+        return lower_page, start_index, middle_pages, upper_page, end_index
+
     def __getitem__(self, index):
         if isinstance(index, slice):
-            s = index
-            start_page, start_number = self._get_indexes(s.start)
-            s_step = s.step or 1
-            if (s_step != 1):
-                s_stop = s.start + (s.stop - s.start) % s_step
-            else:
-                s_stop = s.stop
-            return self.__class__( (self[i] for i in range(s.start, s_stop, s_step)), self.pagesize, self.page_class)
+            if index.step is None or index.step == 1:
+                lower_page, start_index, middle_pages, upper_page, end_index = self._get_slice_interval(index)
+                return (self.__class__._from_pages((
+                        [self.pages[lower_page].data[start_index:]] +
+                        [self.pages[i].data for i in middle_pages ] +
+                        [self.pages[upper_page].data[:end_index] ]
+                    ),
+                    pagesize = self.pagesize,
+                    page_class = self.page_class
+                ))
+            return self.__class__((self[i] for i in range(*index.indices(len(self)))), pagesize=self.pagesize, page_class=self.page_class)
 
+        if index < 0:
+            index += len(self)
         page_number, page_index = self._get_indexes(index)
         return self.pages[page_number].data[page_index]
 
