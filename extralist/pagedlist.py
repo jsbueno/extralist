@@ -8,6 +8,8 @@ import sys
 
 import bisect
 
+from functools import reduce
+
 try:
     from collections.abc import MutableSequence
 except ImportError:
@@ -66,6 +68,12 @@ class PagedList(MutableSequence):
     insertion only affects one page at a time.
 
     """
+
+    # Change this to True on an instance if slices should be PagedList -
+    # otherwise they will be unpaged.
+
+    slice_to_paged = False
+
     _lock_pagesize = False
 
     def __init__(self, sequence=None, pagesize=1000, page_class=list):
@@ -175,9 +183,17 @@ class PagedList(MutableSequence):
         if isinstance(index, slice):
             if index.step is None or index.step == 1:
                 lower_page, start_index, middle_pages, upper_page, end_index = self._get_slice_interval(index)
+                if not self.slice_to_paged:
+                    result_slice = reduce(lambda prev, next: prev + next,
+                                  (self.pages[i].data for i in middle_pages),
+                                  self.pages[lower_page].data[start_index:]
+                    ) + self.pages[upper_page].data[:end_index]
+                    if self.page_class is list:
+                        return result_slice
+                    return self.page_class(result_slice)
                 return (self.__class__._from_pages((
                         [self.pages[lower_page].data[start_index:]] +
-                        [self.pages[i].data for i in middle_pages ] +
+                        [self.pages[i].data[:] for i in middle_pages ] +
                         [self.pages[upper_page].data[:end_index] ]
                     ),
                     pagesize = self.pagesize,

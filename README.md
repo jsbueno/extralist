@@ -25,6 +25,12 @@ there is a 250 fold __gain__ (25000%) in deleting consecutive elements one by on
 ## Future
 Planned helpers/sequence types to be featured here:
 
+### DefaultList
+    A DefaultDict analogue class
+
+### LinkedList
+    Linked list implementation of mutable sequence
+
 ### SequenceWindow
     Returns slices of a larger sequence as an inplace window to the
     main sequence, instead of copies.
