@@ -181,25 +181,25 @@ class PagedList(MutableSequence):
 
     def __getitem__(self, index):
         if isinstance(index, slice):
-            if index.step is None or index.step == 1:
-                lower_page, start_index, middle_pages, upper_page, end_index = self._get_slice_interval(index)
-                if not self.slice_to_paged:
-                    result_slice = reduce(lambda prev, next: prev + next,
-                                  (self.pages[i].data for i in middle_pages),
-                                  self.pages[lower_page].data[start_index:]
-                    ) + self.pages[upper_page].data[:end_index]
-                    if self.page_class is list:
-                        return result_slice
-                    return self.page_class(result_slice)
-                return (self.__class__._from_pages((
-                        [self.pages[lower_page].data[start_index:]] +
-                        [self.pages[i].data[:] for i in middle_pages ] +
-                        [self.pages[upper_page].data[:end_index] ]
-                    ),
-                    pagesize = self.pagesize,
-                    page_class = self.page_class
-                ))
-            return self.__class__((self[i] for i in range(*index.indices(len(self)))), pagesize=self.pagesize, page_class=self.page_class)
+            if index.step is not None and index.step != 1:
+                return self.__class__((self[i] for i in range(*index.indices(len(self)))), pagesize=self.pagesize, page_class=self.page_class)
+            lower_page, start_index, middle_pages, upper_page, end_index = self._get_slice_interval(index)
+            if not self.slice_to_paged:
+                result_slice = reduce(lambda prev, next: prev + next,
+                                (self.pages[i].data for i in middle_pages),
+                                self.pages[lower_page].data[start_index:]
+                ) + self.pages[upper_page].data[:end_index]
+
+                return result_slice if self.page_class is list else self.page_class(result_slice)
+            return (self.__class__._from_pages((
+                    [self.pages[lower_page].data[start_index:]] +
+                    [self.pages[i].data[:] for i in middle_pages] +
+                    [self.pages[upper_page].data[:end_index] ]
+                ),
+                pagesize = self.pagesize,
+                page_class = self.page_class
+            ))
+
 
         if index < 0:
             index += len(self)
@@ -209,6 +209,9 @@ class PagedList(MutableSequence):
     def __setitem__(self, index, value):
         if isinstance(index, slice):
             raise NotImplementedError()
+
+        if index < 0:
+            index += len(self)
         page_number, page_index = self._get_indexes(index)
         self.pages[page_number].data[page_index] = value
 

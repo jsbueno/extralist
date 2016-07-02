@@ -90,4 +90,12 @@ True
 >>> y.insert(15, "bla")
 >>> x[15]
 15
+>>> x = PagedList(range(100), 10)
+>>> x[-1] = 1000
+>>> x[99]
+1000
+>>> x[5:15]=list(range(30))
+>>> len(x)
+130
+
 
