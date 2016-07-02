@@ -182,24 +182,38 @@ class PagedList(MutableSequence):
     def __getitem__(self, index):
         if isinstance(index, slice):
             if index.step is not None and index.step != 1:
-                return self.__class__((self[i] for i in range(*index.indices(len(self)))), pagesize=self.pagesize, page_class=self.page_class)
+                result_generator = (self[i] for i in range(*index.indices(len(self))))
+                return (
+                    self.__class__(result_generator, pagesize=self.pagesize, page_class=self.page_class)
+                        if self.slice_to_paged else
+                    self.page_class(result_generator)
+                )
             lower_page, start_index, middle_pages, upper_page, end_index = self._get_slice_interval(index)
             if not self.slice_to_paged:
-                result_slice = reduce(lambda prev, next: prev + next,
-                                (self.pages[i].data for i in middle_pages),
-                                self.pages[lower_page].data[start_index:]
-                ) + self.pages[upper_page].data[:end_index]
+                if lower_page < upper_page:
+                    result_slice = reduce(lambda prev, next: prev + next,
+                                    (self.pages[i].data for i in middle_pages),
+                                    self.pages[lower_page].data[start_index:]
+                    ) + self.pages[upper_page].data[:end_index]
+                else:
+                    result_slice = self.pages[lower_page].data[start_index: end_index]
 
                 return result_slice if self.page_class is list else self.page_class(result_slice)
-            return (self.__class__._from_pages((
-                    [self.pages[lower_page].data[start_index:]] +
-                    [self.pages[i].data[:] for i in middle_pages] +
-                    [self.pages[upper_page].data[:end_index] ]
-                ),
-                pagesize = self.pagesize,
-                page_class = self.page_class
-            ))
-
+            if lower_page < upper_page:
+                return (self.__class__._from_pages((
+                        [self.pages[lower_page].data[start_index:]] +
+                        [self.pages[i].data[:] for i in middle_pages] +
+                        [self.pages[upper_page].data[:end_index] ]
+                    ),
+                    pagesize = self.pagesize,
+                    page_class = self.page_class
+                ))
+            else:
+                return self._class(
+                    self.pages[lower_page].data[start_index: end_index],
+                    pagesize = self.pagesize,
+                    page_class = self.page_class
+                )
 
         if index < 0:
             index += len(self)
@@ -208,7 +222,37 @@ class PagedList(MutableSequence):
 
     def __setitem__(self, index, value):
         if isinstance(index, slice):
-            raise NotImplementedError()
+            if not hasattr(value, "__len__"):
+                value = list(value)
+            if index.step is None or index.step == 1:
+                lower_page, start_index, middle_pages, upper_page, end_index = self._get_slice_interval(index)
+                # TODO :specialize if value is instance of PagedList
+                if len(value) <= self.pagesize:
+                    if lower_page == upper_page:
+                        self.pages[lower_page].data[start_index: end_index] = value
+                        self._adjust_dirt(lower_page, len(value) - (end_index - start_index))
+                        return
+                    # just extend the lower page with value and remove
+                    # the remaining pages/values
+                    raise NotImplementedError("Cross page insertion for small pages")
+                else:
+                    raise NotImplementedError("Cross page insertion for large pages")
+                    pass
+                    # split value in pages of self.pagesize lenght
+                    # append
+
+            else:
+                all_indices = range(*index.indices(len(self)))
+                if not hasattr(value, "__len__"):
+                    value = list(value)
+                if len(all_indices) != len(value):
+                    raise ValueError(
+                        "attempt to assign sequence of size {} to extended slice of size {}".format(
+                        len(value), len(all_indices))
+                    )
+                for i, v in zip(all_indices, value):
+                    self[i] = v
+                return
 
         if index < 0:
             index += len(self)
