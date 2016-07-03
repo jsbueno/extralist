@@ -122,18 +122,35 @@ class PagedList(MutableSequence):
 
     def _append_page(self, chunk):
         page = Page()
-        page.start = len(self.pages) * self.pagesize
+        # page.start = len(self.pages) * self.pagesize
         page.data = chunk
         self.pages.append(page)
 
-    def _adjust_dirt(self, page_number, amount):
+    def _adjust_dirt(self, page_number, amount, absolute=False):
         dirt_record = bisect.bisect_left(self._dirt_log, [page_number, -sys.maxsize])
-        if len(self._dirt_log) <= dirt_record or not self._dirt_log[dirt_record][0] == page_number:
-            bisect.insort(self._dirt_log, [page_number, amount])
+        if (len(self._dirt_log) <= dirt_record or not self._dirt_log[dirt_record][0] == page_number):
+            if amount:
+                bisect.insort(self._dirt_log, [page_number, amount])
+            return
         else:
-            self._dirt_log[dirt_record][1] += amount
+            if not absolute:
+                self._dirt_log[dirt_record][1] += amount
+            else:
+                self._dirt_log[dirt_record][1] = amount
             if self._dirt_log[dirt_record][1] == 0:
                 del self._dirt_log[dirt_record]
+
+    def _reset_dirt(self, page_number = None):
+        if page_number is not None:
+            amount = len(self.pages[page_number].data) - self.pagesize
+            self._adjust_dirt(page_number, amount, absolute=True)
+            return
+        self._dirt_log = []
+        for i, page in enumerate(self.pages):
+            amount = len(page.data) - self.pagesize
+            if amount:
+                self._dirt_log.append([i, amount])
+
 
     def _local_offset(self, page_number):
         dirt_record = bisect.bisect_left(self._dirt_log, [page_number, -sys.maxsize])
@@ -222,35 +239,68 @@ class PagedList(MutableSequence):
 
     def __setitem__(self, index, value):
         if isinstance(index, slice):
-            if not hasattr(value, "__len__"):
-                value = list(value)
+            values = value
+            if not hasattr(values, "__len__"):
+                values = list(values)
             if index.step is None or index.step == 1:
                 lower_page, start_index, middle_pages, upper_page, end_index = self._get_slice_interval(index)
-                # TODO :specialize if value is instance of PagedList
-                if len(value) <= self.pagesize:
-                    if lower_page == upper_page:
-                        self.pages[lower_page].data[start_index: end_index] = value
-                        self._adjust_dirt(lower_page, len(value) - (end_index - start_index))
+                # TODO :specialize if values is instance of PagedList
+                if len(values) <= self.pagesize and lower_page == upper_page:
+                        self.pages[lower_page].data[start_index: end_index] = values
+                        self._adjust_dirt(lower_page, len(values) - (end_index - start_index))
                         return
-                    # just extend the lower page with value and remove
-                    # the remaining pages/values
-                    raise NotImplementedError("Cross page insertion for small pages")
+                    # Add the end of values to the upper page:
                 else:
-                    raise NotImplementedError("Cross page insertion for large pages")
-                    pass
-                    # split value in pages of self.pagesize lenght
-                    # append
+                    start = 0; end = len(values)
+                    if end_index != 0:
+                        self.pages[upper_page].data[:end_index] = values[-end_index:]
+                        end -= end_index
+                        if end_index > len(values):
+                            self._reset_dirt(upper_page)
+                    if start_index < len(self.pages[lower_page].data):
+                        #if not middle_pages:
+                            #self.pages[lower_page].data[start_index:] = values[:end]
+                            #self._reset_dirt(lower_page)
+                            #return
+                        len_lower_page = len(self.pages[lower_page].data)
+                        self.pages[lower_page].data[start_index:] = values[:len_lower_page - start_index]
+                        # self._reset_dirt(lower_page) # (pagesize is unchanged)
+                        start = len_lower_page - start_index
+
+                        for page_num in middle_pages:
+                            self.pages[page_num].data[:] = values[start: min(start + self.pagesize, end)]
+                            self._reset_dirt(page_num)
+                            start += self.pagesize
+                            if start >= end:
+                                break
+
+                        if not middle_pages:
+                            page_num = lower_page
+
+                        if start >= end:
+                            # values is finished and there are middle pages left
+                            del self.pages[page_num + 1: middle_pages[-1] + 1]
+                        else:
+                            # need to insert new page(s)
+                            for j, start in enumerate(range(start, end, self.pagesize), page_num + 1):
+                                new_page = Page()
+                                new_page.data = self.page_class(values[start: min(start + self.pagesize, end)])
+                                self.pages.insert(j, new_page)
+
+                        self._reset_dirt()
+                        return
+
+                    # add middle pages
 
             else:
+                # extended slice: copy items one by one.
                 all_indices = range(*index.indices(len(self)))
-                if not hasattr(value, "__len__"):
-                    value = list(value)
-                if len(all_indices) != len(value):
+                if len(all_indices) != len(values):
                     raise ValueError(
                         "attempt to assign sequence of size {} to extended slice of size {}".format(
                         len(value), len(all_indices))
                     )
-                for i, v in zip(all_indices, value):
+                for i, v in zip(all_indices, values):
                     self[i] = v
                 return
 

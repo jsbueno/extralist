@@ -14,8 +14,7 @@ From them on, all insetion or deletion happens on the individual pages
 and PagedList keeps track of pages size changes - so that it can always
 retrieve the correct values for the coinained sequence.
 
-[WIP] The PagedList API is under construction right now, and does not
-work with slices yet.
+[WIP] The PagedList API is under construction right now, deletions don't work with slices yet.
 [WIP] At this point of the implementation, for a   10_000_000 sized sequence, using page_size = 10000
 there is a 250 fold __gain__ (25000%) in deleting consecutive elements one by one, and a 40 fold
 (36700%) performance __loss__ in random acess reading to elements on the same sequence afterwards.
