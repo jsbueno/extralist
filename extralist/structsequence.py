@@ -134,5 +134,7 @@ class StructSequence(MutableSequence):
     def insert(self):
         raise NotImplementedError("StructSequence can't insert items in random locations. Use append!")
 
+    def __repr__(self):
+        return "<{} sequence with {} objects>".format(self.name, len(self))
 
 
