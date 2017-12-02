@@ -1,8 +1,4 @@
-"""NamedTuple like class factory - but which accepts
-a string compatible with Python's 'struct' type to hold
-each element on the tuple.
-
-moreover, data can be writable
+"""Packed Binary in memory data structure
 """
 
 import struct
@@ -13,7 +9,9 @@ except ImportError:
     from collections import MutableSequence
 
 
-class StructItem(object):
+class _StructItem(object):
+    """
+    """
 
     _p_cache = None
     def __init__(self, sequence_class, index=None, values=None):
@@ -22,7 +20,7 @@ class StructItem(object):
         if values is not None:
             self._update_values(values)
         if index is None and values is None:
-            raise TypeError("You must either pass an index or a values-object to create a StructItem")
+            raise TypeError("You must either pass an index or a values-object to create a _StructItem")
 
     def _refresh(self):
         if self._index is not None:
@@ -41,7 +39,7 @@ class StructItem(object):
 
     def __setattr__(self, attr, value):
         if attr.startswith("_"):
-            return super(StructItem, self).__setattr__(attr, value)
+            return super(_StructItem, self).__setattr__(attr, value)
         self._refresh()
         if attr not in self._sequence_class.field_names:
             raise AttributeError('{} item does not have {} attribute'.format(self._sequence_class.__name__, attr))
@@ -63,7 +61,7 @@ class StructItem(object):
 
 
     def __eq__(self, other):
-        if isinstance(other, StructItem):
+        if isinstance(other, _StructItem):
             return self._cache == other._cache
         return False
 
@@ -82,7 +80,17 @@ class StructItem(object):
 
 
 class StructSequence(MutableSequence):
-    slots = ()
+    """Packed Binary in Memory data structure
+
+    This provides a barebones  way to hold binary compact raw data
+    on records in memory, and access those in a Pythonic way.
+
+    It does so by transparently serliazing and deserializing record data
+    using Python's struct module on each ondex access.
+
+
+    """
+    slots = "name field_desc field_names data"
 
     def __init__(self, name, field_names, field_desc):
         if not isinstance(field_names, tuple):
@@ -102,7 +110,7 @@ class StructSequence(MutableSequence):
         return struct.pack(self.field_desc, *(getattr(item, field, item.get(field)) for field in self.field_names ))
 
     def append(self, item):
-        if isinstance(item,  StructItem) and item._sequence_class is self:
+        if isinstance(item,  _StructItem) and item._sequence_class is self:
             self.data.extend(item._values)
             item._index = len(self) - 1
         else:
@@ -112,7 +120,7 @@ class StructSequence(MutableSequence):
         return len(self.data) // self.__sizeof__()
 
     def __getitem__(self, index):
-        return StructItem(self, index=index)
+        return _StructItem(self, index=index)
 
     def _todict(self, index=None, values=None):
         if index is not None:
@@ -121,7 +129,7 @@ class StructSequence(MutableSequence):
         return {key: value for key, value in zip(self.field_names, struct.unpack(self.field_desc, values))}
 
     def __setitem__(self, index, item):
-        if isinstance(item,  StructItem) and item._sequence_class is self:
+        if isinstance(item,  _StructItem) and item._sequence_class is self:
             values = item._values
         else:
             values = self._serialize_item(item)

@@ -258,10 +258,6 @@ class PagedList(MutableSequence):
                         if end_index > len(values):
                             self._reset_dirt(upper_page)
                     if start_index < len(self.pages[lower_page].data):
-                        #if not middle_pages:
-                            #self.pages[lower_page].data[start_index:] = values[:end]
-                            #self._reset_dirt(lower_page)
-                            #return
                         len_lower_page = len(self.pages[lower_page].data)
                         self.pages[lower_page].data[start_index:] = values[:len_lower_page - start_index]
                         # self._reset_dirt(lower_page) # (pagesize is unchanged)
@@ -311,7 +307,27 @@ class PagedList(MutableSequence):
 
     def __delitem__(self, index):
         if isinstance(index, slice):
-            raise NotImplementedError()
+            if index.step is None or index.step == 1:
+                lower_page, start_index, middle_pages, upper_page, end_index = self._get_slice_interval(index)
+                if lower_page == upper_page:
+                    self.pages[lower_page].data[start_index:end_index] = []
+                    self._reset_dirt(lower_page)
+                    return
+                self.pages[lower_page].data[start_index:] = []
+                self.pages[upper_page].data[:end_index] = []
+                if middle_pages:
+                    del self.pages[middle_pages[0]:middle_pages [-1]]
+                self._reset_dirt()
+                return
+            else:
+                # extended slice: del items one by one.
+                del_count = 0
+                for single_index in range(*index.indices(len(self))):
+                    del self[single_index - del_count]
+                    del_count += 1
+
+                return
+
         page_number, page_index = self._get_indexes(index)
         del self.pages[page_number].data[page_index]
         self._adjust_dirt(page_number, -1)

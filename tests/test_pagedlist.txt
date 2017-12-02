@@ -151,6 +151,12 @@ True
 >>> len(x.pages)
 4
 
+>>> x = PagedList(range(100), 10)
+>>> del x[:]
+>>> len(x)
+0
+>>> list(x)
+[]
 
 
 

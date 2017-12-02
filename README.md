@@ -14,6 +14,13 @@ From them on, all insetion or deletion happens on the individual pages
 and PagedList keeps track of pages size changes - so that it can always
 retrieve the correct values for the coinained sequence.
 
+Important: "pagesize" is not an absolute page size - it rather is an
+indication of desired page size - insertions and deletions can change
+individual pages to be larger or smaller than this amount.
+Insertions made through slicing (`x[5:15] = range(100)`) will
+respect maximum page size if the slice cross a page boundary -
+but not otherwise.
+
 [WIP] The PagedList API is under construction right now, deletions don't work with slices yet.
 [WIP] At this point of the implementation, for a   10_000_000 sized sequence, using page_size = 10000
 there is a 250 fold __gain__ (25000%) in deleting consecutive elements one by one, and a 40 fold
