@@ -118,6 +118,26 @@ class DoubleLinkedList(MutableSequence):
                 # oh noes, we have been killed
                 self._inpersonate(inpersonate)
 
+    def _set_slice_step_1(self, indices, items):
+        start, stop, step = self._slice_indices(indices)
+        # assert step == 1
+        self._del_slice(indices)
+        for index, item in enumerate(items, start):
+            self.insert(index, item)
+
+    def _set_slice(self, indices, items):
+        if indices.step in (1, None):
+            return self._set_slice_step_1(indices, items)
+
+        nodes_to_replace = self._get_slice(indices, inplace=True)
+        items = list(items)
+        if len(nodes_to_replace) != len(items):
+            msg = "attempt to assign sequence of size {} to extended slice of size {}".format(len(items), len(nodes_to_replace))
+            raise ValueError(msg)
+
+        for node, item in zip(nodes_to_replace, items):
+            node.value = item
+
     @property
     def _isalive(self):
         return getattr(self, "value", _sentinel) is not _sentinel
@@ -166,6 +186,8 @@ class DoubleLinkedList(MutableSequence):
             return func(index).value
 
     def __setitem__(self, index, value):
+        if isinstance(index, slice):
+            return self._set_slice(index, value)
         func = self._prepare_search(index)
         with self.lock:
             node = func(index)

@@ -200,6 +200,49 @@ def test_slice_del_(name, input, result):
         backwards_path_get_all_values(d)
 
 
+@pytest.mark.parametrize("name,input,value, result", [
+   ("single_beggining", (0, 1,), [4], [4, 1, 2, 3]),
+   ("single_middle", (2, 3,), [4], [0, 1, 4, 3]),
+   ("multi_beggining", (0, 3,), [4, 5, 6], [4, 5, 6, 3]),
+   ("multi_middle", (1, 3,), [4, 5,], [0, 4, 5, 3]),
+   ("multi_end", (2, None,), [4, 5,], [0, 1, 4, 5]),
+   ("enlarge_beggining", (0, 2,), [4, 5, 6, 7, 8], [4, 5, 6, 7, 8, 2, 3]),
+   ("delete_beggining", (0, 2,), [], [2, 3]),
+   ("shorten_beggining", (0, 2,), [4, ], [4, 2, 3]),
+   ("enlarge_middle", (1, 2,), [4, 5, 6,], [0, 4, 5, 6, 2, 3]),
+   ("delete_middle", (1, 2,), [], [0, 2, 3]),
+   ("shorten_middle", (1, 3,), [4,], [0, 4, 3]),
+   ("empty", (None, None), [], []),
+   ("insert_middle", (1, 1), [4, 5], [0, 4, 5, 1, 2, 3]),
+])
+def test_slice_assignment_step_1(name, input, value, result):
+    d = DoubleLinkedList([0, 1, 2, 3])
+    index = slice(input[0], input[1], None)
+    d[index] = value
+    assert list(d) == result
+
+
+@pytest.mark.parametrize("name,input,value,should_raise,result", [
+   ("even", (None, None, 2), [6, 7, 8], False, [6, 1, 7, 3, 8, 5]),
+   ("odd", (1, None, 2), [6, 7, 8], False, [0, 6, 2, 7, 4, 8]),
+   ("wrong_size_less", (1, None, 2), [6,], True, None),
+   ("wrong_size_more", (1, None, 2), [6, 7, 8, 9], True, None),
+   ("negative_step_wrong_size", (5, 3, -1), [], True, None),
+   ("negative_step", (None, None, -1), [6, 7, 8, 9, 10, 11], False, [11, 10, 9, 8, 7, 6]),
+   ("negative_step_partial", (5, 2, -1), [6, 7, 8], False, [0, 1, 2, 8, 7, 6]),
+   ("wrapping", (0, 12, 2), list(range(6, 12)), False, [9, 1, 10, 3, 11, 5,])
+])
+def test_slice_assignment_varying_step(name, input, value, should_raise, result):
+    d = DoubleLinkedList([0, 1, 2, 3, 4, 5])
+    index = slice(*input)
+    if should_raise:
+        with pytest.raises(ValueError):
+            d[index] = value
+        return
+    d[index] = value
+    assert list(d) == result
+
+
 def test_rotate_1():
     d = DoubleLinkedList([1, 2, 3, 4])
     d.rotate(1)
