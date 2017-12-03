@@ -1,5 +1,5 @@
 from collections.abc import MutableSequence
-from threading import Lock
+from threading import RLock
 
 _sentinel = object()
 
@@ -35,7 +35,7 @@ class DoubleLinkedList(MutableSequence):
     @classmethod
     def _inner_new__(cls, initial=None, length_marker=None, lock=None, prev=None):
         self =  super().__new__(cls)
-        self.lock = lock if lock else Lock()
+        self.lock = lock if lock else RLock()
         if length_marker is None:
             self._len = [0]
         else:
@@ -75,28 +75,110 @@ class DoubleLinkedList(MutableSequence):
     def _prepare_search(self, index):
         if not self._len[0]:
             raise IndexError
+        if index == 0:
+            return lambda index: self
         return self.get_next if index >= 0 else (lambda index: self.get_prev(-index))
 
+    def _slice_indices(self, indices):
+        step = indices.step if indices.step is not None  else 1
+        start = indices.start if indices.start is not None  else (0 if step > 0 else len(self) - 1)
+        stop = indices.stop if indices.stop is not None  else (len(self) if step > 0 else -1)
+        return start, stop, step
+
+    def _get_slice(self, indices, inplace=False):
+        start, stop, step = self._slice_indices(indices)
+        current = start
+        with self.lock:
+            node = self._prepare_search(start)(start)
+            if inplace:
+                result = []
+            else:
+                result = self.__class__()
+            while (current < stop) if step > 0 else (current > stop):
+                if inplace:
+                    result.append(node)
+                else:
+                    result.append(node.value)
+                node = node._prepare_search(step)(step)
+                current += step
+            return result
+
+    def _del_slice(self, indices):
+        with self.lock:
+            nodes_to_kill = self._get_slice(indices, inplace=True)
+            inpersonate = None
+            for node in nodes_to_kill:
+                next_living = node._del_self_and_be_happy()
+                if self._empty_self():
+                    return
+                if inpersonate is None or not inpersonate._isalive:
+                    # think del dlist[0::2] -> first member must become previous dlist[1]
+                    inpersonate = next_living
+            if not self._isalive:
+                # oh noes, we have been killed
+                self._inpersonate(inpersonate)
+
+    @property
+    def _isalive(self):
+        return getattr(self, "value", _sentinel) is not _sentinel
+
+    def _inpersonate(self, node):
+        # we forget about ourselves, and become the next
+        # should only be called when we've already killed ourselves
+        if not node._isalive:
+            raise RuntimeError("Cannot be replaced by a killed node")
+        self.value = node.value
+        self.next = node.next
+        self.prev = node.prev
+        self.prev.next = self
+        self.next.prev = self
+
+
+    def _empty_self(self):
+        if len(self):
+            return False
+        with self.lock:
+            if self._isalive:
+                del self.value
+                del self.next
+                del self.prev
+            return True
+
+    def _del_self_and_be_happy(self):
+        with self.lock:
+            self._len[0] -= 1
+            if self._empty_self():
+                return
+
+            self.next.prev = self.prev
+            self.prev.next = self.next
+            del self.value
+            # allow self to be forgotten by the GC.
+            return self.next
+
     def __getitem__(self, index):
+        if isinstance(index, slice):
+            return self._get_slice(index)
+        if isinstance(index, slice):
+            return self._get_slice(index)
         func = self._prepare_search(index)
         with self.lock:
             return func(index).value
 
-    def __setitem__(self, item, value):
+    def __setitem__(self, index, value):
         func = self._prepare_search(index)
         with self.lock:
             node = func(index)
             node.value = value
 
     def __delitem__(self, index):
+        if isinstance(index, slice):
+            return self._del_slice(index)
         func = self._prepare_search(index)
         with self.lock:
             node = func(index)
             self._len[0] -= 1
-            if self._len[0] == 0:
-                # del all instance attributes:
-                self.__dict__ = {}
-                self.__class__ = EmptyDoubleLinkedList
+            if self._empty_self():
                 return
             if index == 0:
                 # deleting our own node: we have to replace ourselves
@@ -145,6 +227,9 @@ class DoubleLinkedList(MutableSequence):
         for i in range(self._len[0]):
             yield node.value
             node = node.next
+
+    def __eq__(self, other):
+        return len(self) == len(other) and all(s == o for s, o in zip(self, other))
 
     def rotate(self, index):
         """Works the same as deque.rotate"""
