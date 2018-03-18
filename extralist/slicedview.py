@@ -71,7 +71,7 @@ class SlicedView(MutableSequence):
     def __len__(self):
         if len(self.data) < self.slice.start:
             return 0
-        return (min(self.slice.stop, len(self.data)) - self.slice.start) // self.index.step
+        return (min(self.slice.stop, len(self.data)) - self.slice.start) // self.slice.step
 
 
     def __iter__(self):
