@@ -1,24 +1,13 @@
 # coding: utf-8
 # Author: João S. O. Bueno
 # License: LGPL v 3.0
-from __future__ import unicode_literals
-from __future__ import division
-
+import bisect
+from collections.abc import MutableSequence
+from functools import reduce
 import sys
 
-import bisect
+from .defaultlist import DefaultList
 
-from functools import reduce
-
-try:
-    from collections.abc import MutableSequence
-except ImportError:
-    from collections import MutableSequence
-
-try:
-    range = xrange
-except NameError:
-    pass
 
 def chunk_sequence(sequence, size):
     sequence = iter(sequence)
@@ -34,16 +23,7 @@ def chunk_sequence(sequence, size):
         yield chunk
 
 
-class DefaultList(list):
-    def __init__(self, *args, default_factory=None):
-        super(DefaultList, self).__init__(*args)
-        self.default_factory = default_factory
 
-    def __getitem__(self, attr):
-        try:
-            return super(DefaultList, self).__getitem__(attr)
-        except IndexError:
-            return self.default_factory()
 
 class Page(object):
     __slots__ = "start end data".split()
@@ -53,6 +33,7 @@ def _empty_page():
     p.start = p.end = 0
     p.data = []
     return p
+
 
 class PagedList(MutableSequence):
     """

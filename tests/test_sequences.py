@@ -1,8 +1,8 @@
 import pytest
 
-from extralist import DoubleLinkedList, PagedList
+from extralist import DoubleLinkedList, PagedList, DefaultList
 
-sequences = [list, DoubleLinkedList, PagedList]
+sequences = [list, DoubleLinkedList, DefaultList, PagedList]
 
 @pytest.mark.parametrize("sequence", sequences)
 def test_create_new_seq_from_iterable_preserve_elements(sequence):
