@@ -297,7 +297,7 @@ class PagedList(MutableSequence):
                 self.pages[lower_page].data[start_index:] = []
                 self.pages[upper_page].data[:end_index] = []
                 if middle_pages:
-                    del self.pages[middle_pages[0]:middle_pages [-1]]
+                    del self.pages[middle_pages[0]:middle_pages[-1] + 1]
                 self._reset_dirt()
                 return
             else:
