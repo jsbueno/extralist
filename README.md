@@ -10,9 +10,9 @@ or inserted inside a large sequence.
 
 From an initializer sequence, the data is split in pages, each with
 `pagesize` size. By default the data type of pages is a Python list.
-From them on, all insetion or deletion happens on the individual pages
+From them on, all insertion or deletion happens on the individual pages
 and PagedList keeps track of pages size changes - so that it can always
-retrieve the correct values for the coinained sequence.
+retrieve the correct values for the contained sequence.
 
 Important: "pagesize" is not an absolute page size - it rather is an
 indication of desired page size - insertions and deletions can change
@@ -21,27 +21,29 @@ Insertions made through slicing (`x[5:15] = range(100)`) will
 respect maximum page size if the slice cross a page boundary -
 but not otherwise.
 
-[WIP] The PagedList API is under construction right now, deletions don't work with slices yet.
 [WIP] At this point of the implementation, for a   10_000_000 sized sequence, using page_size = 10000
 there is a 250 fold __gain__ (25000%) in deleting consecutive elements one by one, and a 40 fold
 (36700%) performance __loss__ in random acess reading to elements on the same sequence afterwards.
 
 [WIP] getitem slice and negative indexes handling implemented
 
-## Future
-Planned helpers/sequence types to be featured here:
 
-### DefaultList
+## DefaultList
     A DefaultDict analogue class
 
-### LinkedList
+## LinkedList
     Linked list implementation of mutable sequence
 
-### SequenceWindow
+## SlicedView
     Returns slices of a larger sequence as an inplace window to the
     main sequence, instead of copies.
     (If you need that before it is done here, check the ListView implementation
      at https://github.com/lhc/lhcpython/blob/master/tree.py for now)
+
+## Future
+Planned helpers/sequence types to be featured here:
+
+
 
 ### SliceableMutableSequence
     Like collections.abc.MutableSequence but automatically handles
@@ -50,5 +52,7 @@ Planned helpers/sequence types to be featured here:
     support both integer indexes and slices for these methods). It should also
     handle negative indexes properly.
 
+### SomeTreeishSequence
+    Some Tree Based Sequence  :-)
 
 

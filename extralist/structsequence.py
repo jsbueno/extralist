@@ -90,7 +90,7 @@ class StructSequence(MutableSequence):
 
 
     """
-    slots = "name field_desc field_names data"
+    __slots__ = "name field_desc field_names data"
 
     def __init__(self, name, field_names, field_desc):
         if not isinstance(field_names, tuple):

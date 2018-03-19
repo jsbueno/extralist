@@ -68,7 +68,7 @@ class PagedList(MutableSequence):
         # self.END the page number will be one more than the actual existing pages.
         # (and len(self.pages) is super-usefull to keep track of the actual number of
         # pages
-        self.pages = DefaultList(default_factory=_empty_page)
+        self.pages = DefaultList(default_factory=_empty_page, append_on_extra=True)
         self._dirt_log = []
 
     @classmethod

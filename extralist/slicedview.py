@@ -67,6 +67,7 @@ class SlicedView(MutableSequence):
 
         else:
             del self.data[self._real_index(index)]
+            self.slice = slice(self.slice.start, self.slice.stop - self.slice.step , self.slice.step)
 
     def __len__(self):
         if len(self.data) < self.slice.start:
@@ -75,10 +76,14 @@ class SlicedView(MutableSequence):
 
 
     def __iter__(self):
+        max_ = len(self)
         for i in range(self.slice.start, self.slice.stop, self.slice.step):
             yield self.data[i]
 
     def insert(self, position, value):
+        if not (0 <= position <= len(self)):
+            raise IndexError("Can't insert new item at position '{}' in slice".format(position))
         self.data.insert(self._real_index(position), value)
+        self.slice = slice(self.slice.start, self.slice.stop + self.slice.step , self.slice.step)
 
 
