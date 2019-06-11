@@ -1,5 +1,7 @@
 from collections.abc import MutableSequence
 from threading import RLock
+import warnings
+
 
 _sentinel = object()
 
@@ -30,6 +32,9 @@ class DoubleLinkedList(MutableSequence):
     """
 
     def __new__(cls, initial=None):
+
+        warnings.warn("DoubleLinkedList implementation currently have unfixed bugs. It is use in production is not recomended")
+
         return cls._inner_new__(iter(initial or []))
 
     @classmethod

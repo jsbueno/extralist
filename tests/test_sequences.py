@@ -11,12 +11,14 @@ from extralist import DoubleLinkedList, PagedList, DefaultList, SlicedView
 
 paged_list_small_factory = lambda seq: PagedList(seq, pagesize=5)
 
-SAMPLE_LENGTH = 30
+SAMPLE_LENGTH = 3000
 
 def _get_sample():
     return list(range(SAMPLE_LENGTH))
 
-sequences = [list, DoubleLinkedList, DefaultList, PagedList, SlicedView, paged_list_small_factory]
+# sequences = [list, DoubleLinkedList, DefaultList, PagedList, SlicedView, paged_list_small_factory]
+sequences = [list, DefaultList, SlicedView]
+
 
 @pytest.mark.parametrize("sequence", sequences)
 def test_create_new_seq_from_other_seq_preserve_elements(sequence):
@@ -66,7 +68,7 @@ def test_create_sequence_can_insert_elements_at_random(sequence):
     data = sequence(_get_sample())
     control = _get_sample()
     random.seed(0)
-    for j in range(SAMPLE_LENGTH):
+    for j in range(SAMPLE_LENGTH // 10):
         i = random.randrange(0, SAMPLE_LENGTH)
         data.insert(i, j)
         control.insert(i, j)

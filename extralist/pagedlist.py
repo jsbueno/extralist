@@ -5,8 +5,11 @@ import bisect
 from collections.abc import MutableSequence
 from functools import reduce
 import sys
+import warnings
 
 from .defaultlist import DefaultList
+
+
 
 
 def chunk_sequence(sequence, size):
@@ -56,6 +59,10 @@ class PagedList(MutableSequence):
     slice_to_paged = False
 
     _lock_pagesize = False
+
+    def __new__(cls, *args, **kw):
+        warnings.warn("PagedList implementation currently have unfixed bugs. It is use in production is not recomended")
+        return super().__new__(cls)
 
     def __init__(self, sequence=None, pagesize=1000, page_class=list):
         self._reset(pagesize, page_class)

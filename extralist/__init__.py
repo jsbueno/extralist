@@ -8,6 +8,9 @@ from .slicedview import SlicedView
 
 __author__ = "João S. O. Bueno"
 __license__ = "LGPL v3.0+"
-__version__ = "0.1.0a1.dev0"
+__version__ = "0.2.0a1.dev0"
 
+
+from .defaultlist import DefaultList
+from .slicedview import SlicedView
 
