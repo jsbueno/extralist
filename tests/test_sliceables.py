@@ -25,6 +25,33 @@ def slicable_fixed_seq():
     return content, data
 
 
+@pytest.fixture
+def slicable_mutable_seq():
+    class TestMutableSeq(SlicableSequenceMixin, Sequence):
+        def __init__(self, data):
+            self._data = tuple(data)
+
+        def __getitem__(self, index):
+            return self._data[index]
+
+        def __setiem__(self, index, value):
+            self._data[index] = value
+
+        def __delitem__(self, index):
+            del self._data[index]
+
+        def insert(self, index, value):
+            self._data.insert(index, value)
+
+        def __len__(self):
+            return len(self._data)
+
+
+    content = list(range(10))
+    data = TestMutableSeq(content)
+    return content, data
+
+
 def test_can_read_simple_itens(slicable_fixed_seq):
     content, imutable_seq = slicable_fixed_seq
     for i in range(len(content)):
@@ -43,3 +70,11 @@ def test_can_read_slices(slicable_fixed_seq, start, stop, step):
     content, imutable_seq = slicable_fixed_seq
 
     assert imutable_seq[start:stop:step] == content[start:stop:step]
+
+
+def test_can_write_simple_itens(slicable_mutable_seq):
+    content, mutable_seq = slicable_mutable_seq
+    for i, val in enumerate(range(100, 100 + len(content))):
+        mutable_seq[i] = val
+    for val, stored in zip(range(100, 100 + len(content)), mutable_seq):
+        assert val == stored
