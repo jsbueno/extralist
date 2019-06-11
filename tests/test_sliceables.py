@@ -25,10 +25,21 @@ def slicable_fixed_seq():
     return content, data
 
 
-def test_can_read_slices(slicable_fixed_seq):
+def test_can_read_simple_itens(slicable_fixed_seq):
+    content, imutable_seq = slicable_fixed_seq
+    for i in range(len(content)):
+        assert imutable_seq[i] == content[i]
+
+
+@pytest.mark.parametrize("start,stop,step",[
+    (0, 5, None),
+    (None, None, None),
+    (-5, None, None),
+    (1,None,None),
+    (None, None, 2),
+    (None, None, -1),
+])
+def test_can_read_slices(slicable_fixed_seq, start, stop, step):
     content, imutable_seq = slicable_fixed_seq
 
-    assert imutable_seq[0:5] == content[0:5]
-    assert imutable_seq[:] == content[:]
-    assert imutable_seq[-5:] == content[-5:]
-    assert imutable_seq[1] == content[1]
+    assert imutable_seq[start:stop:step] == content[start:stop:step]

@@ -8,17 +8,15 @@ def method_with_slice(method):
         value = [value] if value is not _sentinel else []
         if not isinstance(index, slice):
             return method(self, index, *value)
-        indexes = index
+        indexes = range(*index.indices(len(self)))
         if method.__name__ == "__getitem__":
             results = []
-            for index in indexes.indices(len(self)):
+            for index in indexes:
                 results.append(method(self, index))
             return results
         raise NotImplementedError()
 
     return _inner
-
-
 
 
 class SlicableSequenceMixin:
