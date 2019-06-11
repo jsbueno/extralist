@@ -51,7 +51,7 @@ def sliceable_mutable_seq():
             return len(self._data)
 
 
-    content = list(range(10))
+    content = list(range(test_seq_size))
     data = TestMutableSeq(content)
     return content, data
 
@@ -74,6 +74,14 @@ def test_can_read_slices(sliceable_fixed_seq, start, stop, step):
     content, immutable_seq = sliceable_fixed_seq
 
     assert list(immutable_seq[start:stop:step]) == content[start:stop:step]
+
+
+def test_reading_out_of_range_slices_should_work(sliceable_fixed_seq):
+    content, immutable_seq = sliceable_fixed_seq
+
+    assert immutable_seq[-1: test_seq_size + 10][0] == content[-1]
+    assert list(immutable_seq[test_seq_size: test_seq_size + 10]) == []
+    assert list(immutable_seq[-2 * test_seq_size: 0]) == []
 
 
 def test_returned_slice_same_class_as_parent(sliceable_fixed_seq):
@@ -114,7 +122,7 @@ def test_can_change_stepped_slices(sliceable_mutable_seq):
     mutable_seq[start:stop:step] = ["sentinel"] * size1
 
     cont = 0
-    for index in range(len(seq)):
+    for index in range(len(mutable_seq)):
         if not cont % step and start <= index < stop:
             assert mutable_seq[index] == "sentinel"
         else:
@@ -137,11 +145,10 @@ def test_can_change_slices_for_different_sized_seqs(sliceable_mutable_seq, facto
     new_content = ["sentinel"] * size2
 
     mutable_seq[start:stop] = new_content
+    content[start:stop] = new_content
 
-    assert len(content) == len(mutable_seq) - size2 + size1
-    assert all(content[i] == mutable_seq[i] for i in range(start))
-    assert all(content[i] == mutable_seq[i] for i in range(len(content) -1, stop, -1))
-    assert all(mutable_seq[i] == "sentinel" for i in range(start, start + size2))
+    assert len(content) == len(mutable_seq)
+    assert list(mutable_seq) == content
 
 
 
