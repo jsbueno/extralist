@@ -29,6 +29,7 @@ class DefaultList(list):
         super(DefaultList, self).__init__(*args)
         if default_factory is None:
             default_factory = lambda i: None
+        self.append_on_extra = append_on_extra
         self.default_factory = default_factory
         self.takes_index = bool(signature(default_factory).parameters)
 
@@ -36,6 +37,8 @@ class DefaultList(list):
         try:
             return super(DefaultList, self).__getitem__(index)
         except IndexError:
+            if not self.append_on_extra:
+                return self.default_factory(*((index,) if self.takes_index else ()))
             if index < 0:
                 raise IndexError("Can't create default element at negative index")
             for i in range(len(self), index + 1):
