@@ -5,7 +5,7 @@ from setuptools import setup
 setup(
     name = 'extralist',
     packages = ['extralist'],
-    version = "0.1.0a1.dev0",
+    version = "0.99.0",
     license = "LGPLv3+",
     author = "João S. O. Bueno",
     author_email = "gwidion@gmail.com",
