@@ -1,10 +1,17 @@
 [build-system]
-requires = ["setuptools>=61"]
-build-backend = "setuptools.backends.legacy:build"
+requires = ["setuptools>=74", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+include-package-data = true
+packages = ["extralist"]
+
+[tool.setuptools.dynamic]
+version = {attr = "extralist.__version__"}
 
 [project]
 name = "extralist"
-version = "0.99.0"
+dynamic = ["version"]
 description = "Enhanced, maybe useful, data containers and utilities implementing sequence tupes"
 readme = "README.md"
 license = { file = "LICENSE" }
@@ -12,20 +19,18 @@ authors = [
     { name = "João S. O. Bueno", email = "gwidion@gmail.com" }
 ]
 keywords = ["list", "sequence", "linked", "linkedlist", "tree", "tuple", "namedtuple", "pagedlist"]
-requires-python = ">=3.6"
+requires-python = ">=3.10"
 dependencies = []
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.6",
-    "Programming Language :: Python :: 3.7",
-    "Programming Language :: Python :: 3.8",
-    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Programming Language :: Python :: 3.15",
     "Programming Language :: Python :: Implementation :: PyPy",
     "License :: OSI Approved :: GNU Lesser General Public License v3 or later (LGPLv3+)",
     "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
@@ -38,5 +43,3 @@ test = ["pytest", "pytest-benchmark"]
 [project.urls]
 Homepage = "https://github.com/jsbueno/extralist"
 
-[tool.setuptools]
-packages = ["extralist"]
