@@ -36,8 +36,8 @@ def sliceable_fixed_seq(request):
     return content, data
 
 
-@pytest.fixture(params=["mixin", "classdecorator"])
-def sliceable_mutable_seq(request):
+@pytest.fixture
+def TestBaseSequence():
     class TestBase(MutableSequence):
         def __init__(self, data):
             self._data = list(data)
@@ -56,13 +56,17 @@ def sliceable_mutable_seq(request):
 
         def __len__(self):
             return len(self._data)
+    return TestBase
+
+@pytest.fixture(params=["mixin", "classdecorator"])
+def sliceable_mutable_seq(request, TestBaseSequence):
 
     if request.param == "mixin":
-        class TestMutableSeq(SliceableSequenceMixin, TestBase):
+        class TestMutableSeq(SliceableSequenceMixin, TestBaseSequence):
             pass
     else:
         @sliceable
-        class TestMutableSeq(TestBase):
+        class TestMutableSeq(TestBaseSequence):
             pass
 
     content = list(range(test_seq_size))
@@ -165,14 +169,12 @@ def test_can_change_slices_for_different_sized_seqs(sliceable_mutable_seq, facto
     assert list(mutable_seq) == content
 
 
-
 def test_change_stepped_slices_with_different_sizes_should_fail(sliceable_mutable_seq):
     content, mutable_seq = sliceable_mutable_seq
 
     start = test_seq_size // 3
     stop = 2 * start
     step = 3
-
 
     size1 = len(range(start, stop, 1))
     with pytest.raises(ValueError):
@@ -202,3 +204,27 @@ def test_can_delete_stepped_slices(sliceable_mutable_seq):
     del content[start:stop:step]
 
     assert list(mutable_seq) == content
+
+
+
+
+def test_works_with_multiple_inheritance(TestBaseSequence, sliceable_mutable_seq):
+
+    class SubCls1(TestBaseSequence):
+        def __setitem__(self, index, value):
+            super().__setitem__(index, value)
+
+    @sliceable
+    class SubCls2(SubCls1):
+        pass
+
+    content, _ = sliceable_mutable_seq
+    mutable_seq = SubCls2(content)
+
+    start = test_seq_size // 3
+    stop = 2 * start
+
+    mutable_seq[start:stop] = range(stop - start)
+
+    for val, index in enumerate(range(start, stop)):
+        assert mutable_seq[index] == val
