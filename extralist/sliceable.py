@@ -52,22 +52,27 @@ def method_with_slice(method):
             return method(self, index, *value)
         indices = range(*index.indices(len(self)))
         return methods[method.__name__](self, indices, index, *value)
-
     return _inner
 
+
+def sliceable(cls):
+    """Decorates a class so that the main sequence-related
+    magic methods (__getitem__, __setitem__ and __delitem__
+    work automatically with slices as well - not just scalar
+    indexes.
+    """
+    for method_name in "__getitem__ __setitem__ __delitem__".split():
+        method = getattr(cls, method_name, _sentinel)
+        if method is _sentinel:
+            continue
+        setattr(cls, method_name, method_with_slice(method))
+    return cls
 
 class SliceableSequenceMixin:
 
     def __init_subclass__(cls, *args, **kwargs):
-        for method_name in "__getitem__ __setitem__ __delitem__".split():
-            method = getattr(cls, method_name, _sentinel)
-            if method is _sentinel:
-                continue
-            setattr(cls, method_name, method_with_slice(method))
+        sliceable(cls)
         super().__init_subclass__(*args, **kwargs)
 
 
 # TODO: have a method decorator for indivitual __getitem__, etc...
-# the decorator should also work on classes.
-# maybe remove the "mixin" approach at all.
-

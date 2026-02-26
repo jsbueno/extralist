@@ -1,15 +1,14 @@
 from collections.abc import Sequence, MutableSequence
 
 import pytest
-from extralist.sliceable import SliceableSequenceMixin # SlicableMutableSequence
-
+from extralist.sliceable import SliceableSequenceMixin, sliceable
 
 offset = 100
 test_seq_size = 1000
 
-@pytest.fixture
-def sliceable_fixed_seq():
-    class TestImutableSeq(SliceableSequenceMixin, Sequence):
+@pytest.fixture(params=["mixin", "classdecorator"])
+def sliceable_fixed_seq(request):
+    class TestBase(Sequence):
         def __init__(self, data):
             self._data = tuple(data)
 
@@ -24,14 +23,22 @@ def sliceable_fixed_seq():
                 self.hash = hash(self.__dict__["_data"])
             return self.hash
 
+    if request.param == "mixin":
+        class TestIMutableSeq(SliceableSequenceMixin, TestBase):
+            pass
+    else:
+        @sliceable
+        class TestIMutableSeq(TestBase):
+            pass
+
     content = list(range(test_seq_size))
-    data = TestImutableSeq(content)
+    data = TestIMutableSeq(content)
     return content, data
 
 
-@pytest.fixture
-def sliceable_mutable_seq():
-    class TestMutableSeq(SliceableSequenceMixin, Sequence):
+@pytest.fixture(params=["mixin", "classdecorator"])
+def sliceable_mutable_seq(request):
+    class TestBase(MutableSequence):
         def __init__(self, data):
             self._data = list(data)
 
@@ -50,13 +57,20 @@ def sliceable_mutable_seq():
         def __len__(self):
             return len(self._data)
 
+    if request.param == "mixin":
+        class TestMutableSeq(SliceableSequenceMixin, TestBase):
+            pass
+    else:
+        @sliceable
+        class TestMutableSeq(TestBase):
+            pass
 
     content = list(range(test_seq_size))
     data = TestMutableSeq(content)
     return content, data
 
 
-def test_can_read_simple_itens(sliceable_fixed_seq):
+def test_can_read_simple_items(sliceable_fixed_seq):
     content, immutable_seq = sliceable_fixed_seq
     for i in range(len(content)):
         assert immutable_seq[i] == content[i]
