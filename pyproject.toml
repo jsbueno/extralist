@@ -1,0 +1,42 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.backends.legacy:build"
+
+[project]
+name = "extralist"
+version = "0.99.0"
+description = "Enhanced, maybe useful, data containers and utilities implementing sequence tupes"
+readme = "README.md"
+license = { file = "LICENSE" }
+authors = [
+    { name = "João S. O. Bueno", email = "gwidion@gmail.com" }
+]
+keywords = ["list", "sequence", "linked", "linkedlist", "tree", "tuple", "namedtuple", "pagedlist"]
+requires-python = ">=3.6"
+dependencies = []
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.6",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: Implementation :: PyPy",
+    "License :: OSI Approved :: GNU Lesser General Public License v3 or later (LGPLv3+)",
+    "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
+    "Operating System :: OS Independent",
+]
+
+[project.optional-dependencies]
+test = ["pytest", "pytest-benchmark"]
+
+[project.urls]
+Homepage = "https://github.com/jsbueno/extralist"
+
+[tool.setuptools]
+packages = ["extralist"]
