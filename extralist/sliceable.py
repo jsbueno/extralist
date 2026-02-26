@@ -20,12 +20,15 @@ def method_with_slice(method):
         if not hasattr(type(values), "__len__"):
             values = list(values)
         if slice_.step not in (None, 1) and len(values) != len(indices):
-            raise ValueError(f"attempt to assign sequence of size {len(values)} to extended slice of size {len(indices)}")
+            raise ValueError(f"attempt to assign sequence of size {len(values)} to non-contiguous slice of size {len(indices)}")
+
+        # Happy path: source and target are same size!
         if len(values) == len(indices):
             for index, value in zip(indices, values):
                 method(self, index, value)
             return
-        # Remove previous content
+        # Source and target differ size: manually
+        # remove old content and insert new one
         self.__delitem__(slice_)
         counter = 0
         for i, value in enumerate(values):
@@ -64,4 +67,7 @@ class SliceableSequenceMixin:
         super().__init_subclass__(*args, **kwargs)
 
 
+# TODO: have a method decorator for indivitual __getitem__, etc...
+# the decorator should also work on classes.
+# maybe remove the "mixin" approach at all.
 
