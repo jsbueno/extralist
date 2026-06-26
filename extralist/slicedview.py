@@ -12,16 +12,14 @@ class SlicedView(MutableSequence):
 
     """
 
-    def __init__(self, data, slice=None):
+    def __init__(self, data, slice_=None):
         self.data = data
-        given_slice = slice
-        slice = __builtins__["slice"]
-        if isinstance(given_slice, slice):
-            start = given_slice.start
-            stop = given_slice.stop
-            step = given_slice.step
+        if isinstance(slice_, slice):
+            start = slice_.start
+            stop = slice_.stop
+            step = slice_.step
         else:
-            start, stop, step = given_slice if given_slice is not None else (0, len(data), 1)
+            start, stop, step = slice_ if slice_ is not None else (0, len(data), 1)
         if start is None:
             start = 0
         if stop is None:

@@ -116,7 +116,7 @@ class DoubleLinkedList(MutableSequence):
             nodes_to_kill = self._get_slice(indices, inplace=True)
             impersonate = None
             for node in nodes_to_kill:
-                next_living = node._unlink_self()
+                next_living = node._del_self_and_be_happy()
                 if self._empty_self():
                     return
                 if impersonate is None or not impersonate._is_alive:
@@ -172,7 +172,7 @@ class DoubleLinkedList(MutableSequence):
                 del self.prev
             return True
 
-    def _unlink_self(self):
+    def _del_self_and_be_happy(self):
         with self.lock:
             self._len[0] -= 1
             if self._empty_self():
