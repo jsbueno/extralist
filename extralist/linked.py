@@ -8,32 +8,35 @@ _sentinel = object()
 class DoubleLinkedList(MutableSequence):
     """Sequence stored as a linked list of Python Objects.
 
-    Creates a classic "double linked list", complient with
-    Python MutableSequence protocol. Each node has a value,
+    Creates a classic doubly linked list, compliant with
+    Python's MutableSequence protocol. Each node has a value,
     which is retrieved and set by indexed operations,
-    and references for previous and next nodes.
+    and references to previous and next nodes.
 
     One can change another node to be the "head"
     by just retrieving it by index.
 
-    The "rotate" method rotates the list "in place".
+    The "rotate" method rotates the list in place.
 
-    This is much less space eficient than normal
+    This is much less space-efficient than normal
     Python sequences, due to the extra wrapper object
-    and pointers to values -
-    however, insertion and deletion are guarantted
-    at O[n] at any point of the object, and if it needs
+    and pointers to values —
+    however, insertion and deletion are guaranteed
+    O(n) at any point of the object, and if it needs
     to get faster, all one needs is a reference
-    to a node close where the insertions and deletions
-    are taking place, as the linear time is spend just
-    to get to insertion place, not shifting data around.
+    to a node close to where the insertions and deletions
+    are taking place, as the linear time is spent just
+    getting to the insertion place, not shifting data around.
 
-    TODO: implment get/insert/delete slices capability
+    TODO: implement get/insert/delete slice capability
     """
 
     def __new__(cls, initial=None):
 
-        warnings.warn("DoubleLinkedList implementation currently have unfixed bugs. It is use in production is not recomended")
+        warnings.warn(
+            "DoubleLinkedList implementation currently has unfixed bugs. "
+            "Its use in production is not recommended."
+        )
 
         return cls._inner_new__(iter(initial or []))
 
@@ -111,17 +114,17 @@ class DoubleLinkedList(MutableSequence):
     def _del_slice(self, indices):
         with self.lock:
             nodes_to_kill = self._get_slice(indices, inplace=True)
-            inpersonate = None
+            impersonate = None
             for node in nodes_to_kill:
                 next_living = node._del_self_and_be_happy()
                 if self._empty_self():
                     return
-                if inpersonate is None or not inpersonate._isalive:
+                if impersonate is None or not impersonate._isalive:
                     # think del dlist[0::2] -> first member must become previous dlist[1]
-                    inpersonate = next_living
+                    impersonate = next_living
             if not self._isalive:
                 # oh noes, we have been killed
-                self._inpersonate(inpersonate)
+                self._impersonate(impersonate)
 
     def _set_slice_step_1(self, indices, items):
         start, stop, step = self._slice_indices(indices)
@@ -147,7 +150,7 @@ class DoubleLinkedList(MutableSequence):
     def _isalive(self):
         return getattr(self, "value", _sentinel) is not _sentinel
 
-    def _inpersonate(self, node):
+    def _impersonate(self, node):
         # we forget about ourselves, and become the next
         # should only be called when we've already killed ourselves
         if not node._isalive:
@@ -267,7 +270,7 @@ class DoubleLinkedList(MutableSequence):
 
         self.__dict__, other.__dict__ = other.__dict__, self.__dict__
 
-        # and fix referencers for all neighbors:
+        # and fix references for all neighbors:
 
         if self.next is self:
             self.next = other

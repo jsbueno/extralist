@@ -3,7 +3,7 @@ from collections.abc import MutableSequence
 
 class SlicedView(MutableSequence):
     """A View on a sequence.
-    Allows one to have sub-lists of a list without duplicating te underlying data.
+    Allows one to have sub-lists of a list without duplicating the underlying data.
 
     Reading a slice from an object of this class will produce a new view
     on the original data. (But passing a SlicedView as data to it,

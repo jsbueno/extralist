@@ -80,14 +80,13 @@ class _StructItem(object):
 
 
 class StructSequence(MutableSequence):
-    """Packed Binary in Memory data structure
+    """Packed binary in-memory data structure.
 
-    This provides a barebones  way to hold binary compact raw data
-    on records in memory, and access those in a Pythonic way.
+    This provides a bare-bones way to hold compact binary record data
+    in memory and access it in a Pythonic way.
 
-    It does so by transparently serliazing and deserializing record data
-    using Python's struct module on each ondex access.
-
+    It does so by transparently serializing and deserializing record data
+    using Python's struct module on each index access.
 
     """
     __slots__ = ("name", "field_desc", "field_names", "data")

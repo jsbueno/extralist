@@ -14,15 +14,15 @@ class DefaultList(list):
     instantiation time.
 
     Unlike defaultdict, produced values are just returned, not created
-    and added to the list, unless 'append_on_extra_ is passed = True.
-    The reason being all intermediate values
+    and added to the list, unless append_on_extra is passed as True.
+    The reason is that all intermediate values
     between the current list length and the requested missing index
     would have to be filled.
 
     The factory function may have
     a single parameter, in which case the requested index
     is passed. If no factory function is passed, a
-    "None" producing factory is used by default.
+    factory that produces None is used by default.
     """
 
     def __init__(self, *args, default_factory=None, append_on_extra=False):

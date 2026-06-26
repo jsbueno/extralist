@@ -76,8 +76,8 @@ testpaths = ["tests"]
 python_files = ["test_*.py"]
 addopts = ["-ra"]
 filterwarnings = [
-    "ignore:DoubleLinkedList implementation currently have unfixed bugs:UserWarning",
-    "ignore:PagedList implementation currently have unfixed bugs:UserWarning",
+    "ignore:DoubleLinkedList implementation currently has unfixed bugs:UserWarning",
+    "ignore:PagedList implementation currently has unfixed bugs:UserWarning",
 ]
 
 [tool.coverage.run]

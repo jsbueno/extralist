@@ -40,12 +40,12 @@ def _empty_page():
 
 class PagedList(MutableSequence):
     """
-    Sequence designed for high performance inserting/deleting of elements in the middle
+    Sequence designed for high-performance inserting/deleting of elements in the middle.
 
-    Python's list and other stdlib sequence types by default need a sequence of objects -
+    Python's list and other stdlib sequence types store a contiguous sequence of objects,
     so there is no easy sequence that allows arbitrary insertion or erasing of items
     in the middle of the body without a huge performance cost, as any insertion or
-    deleting implies copying over all the remaining elements of the sequence to another
+    deletion implies copying over all the remaining elements of the sequence to another
     position.
 
     PagedList amortizes that by holding several "pages" with sequence parts, so that each
@@ -53,15 +53,18 @@ class PagedList(MutableSequence):
 
     """
 
-    # Change this to True on an instance if slices should be PagedList -
-    # otherwise they will be unpaged.
+    # Change this to True on an instance if slices should be PagedList —
+    # otherwise they will be plain (un-paged) sequences.
 
     slice_to_paged = False
 
     _lock_pagesize = False
 
     def __new__(cls, *args, **kw):
-        warnings.warn("PagedList implementation currently have unfixed bugs. It is use in production is not recomended")
+        warnings.warn(
+            "PagedList implementation currently has unfixed bugs. "
+            "Its use in production is not recommended."
+        )
         return super().__new__(cls)
 
     def __init__(self, sequence=None, pagesize=1000, page_class=list):
@@ -73,8 +76,8 @@ class PagedList(MutableSequence):
         self.page_class = page_class
         # DefaultList is used because when computing slices that extend to
         # self.END the page number will be one more than the actual existing pages.
-        # (and len(self.pages) is super-usefull to keep track of the actual number of
-        # pages
+        # (and len(self.pages) is super-useful to keep track of the actual number of
+        # pages)
         self.pages = DefaultList(default_factory=_empty_page, append_on_extra=True)
         self._dirt_log = []
 
