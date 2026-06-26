@@ -5,19 +5,44 @@ regardless of extra properties they have.
 
 import pytest
 import random
-import time
+import warnings
 
-from extralist import DoubleLinkedList, PagedList, DefaultList, SlicedView
+from extralist import DefaultList, DoubleLinkedList, PagedList, SlicedView
 
-paged_list_small_factory = lambda seq: PagedList(seq, pagesize=5)
+SAMPLE_LENGTH = 500
 
-SAMPLE_LENGTH = 3000
 
 def _get_sample():
     return list(range(SAMPLE_LENGTH))
 
-# sequences = [list, DoubleLinkedList, DefaultList, PagedList, SlicedView, paged_list_small_factory]
-sequences = [list, DefaultList, SlicedView]
+
+def _paged_small(seq):
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", UserWarning)
+        return PagedList(seq, pagesize=5)
+
+
+def _double_linked(seq):
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", UserWarning)
+        return DoubleLinkedList(seq)
+
+
+def _paged_default(seq):
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", UserWarning)
+        return PagedList(seq)
+
+
+# Shared mutable-sequence smoke tests for exported sequence types (+ list control).
+sequences = [
+    list,
+    DefaultList,
+    SlicedView,
+    _double_linked,
+    _paged_small,
+    _paged_default,
+]
 
 
 @pytest.mark.parametrize("sequence", sequences)

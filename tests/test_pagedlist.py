@@ -112,4 +112,45 @@ def test_slicing_with_slice_to_paged_true():
 def test_slicing_with_slice_to_paged_false():
     x = PagedList(range(100), 10)
     x.slice_to_paged = False
-    y = x
+    y = x[25:35]
+    assert list(y) == [25, 26, 27, 28, 29, 30, 31, 32, 33, 34]
+    assert y.__class__ is list
+
+
+def test_del_multi_page_slice_matches_list():
+    control = list(range(30))
+    x = PagedList(range(30), 5)
+    del control[3:17]
+    del x[3:17]
+    assert list(x) == control
+
+
+def test_set_multi_page_slice_matches_list():
+    control = list(range(30))
+    x = PagedList(range(30), 5)
+    replacement = list(range(100, 110))
+    control[3:12] = replacement
+    x[3:12] = replacement
+    assert list(x) == control
+
+
+def test_extended_slice_assign_matches_list():
+    control = list(range(20))
+    x = PagedList(range(20), 5)
+    control[0:10:2] = [10, 11, 12, 13, 14]
+    x[0:10:2] = [10, 11, 12, 13, 14]
+    assert list(x) == control
+
+
+def test_extended_slice_assign_wrong_size_raises():
+    x = PagedList(range(20), 5)
+    with pytest.raises(ValueError):
+        x[0:10:2] = [1]
+
+
+def test_slice_to_paged_same_page_returns_paged_list():
+    x = PagedList(range(20), 10)
+    x.slice_to_paged = True
+    y = x[2:5]
+    assert type(y) is PagedList
+    assert list(y) == [2, 3, 4]

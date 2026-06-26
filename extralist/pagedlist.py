@@ -28,11 +28,12 @@ def chunk_sequence(sequence, size):
 
 
 
-class Page(object):
-    __slots__ = "start end data".split()
+class _Page:
+    __slots__ = ("start", "end", "data")
+
 
 def _empty_page():
-    p = Page()
+    p = _Page()
     p.start = p.end = 0
     p.data = []
     return p
@@ -40,12 +41,12 @@ def _empty_page():
 
 class PagedList(MutableSequence):
     """
-    Sequence designed for high performance inserting/deleting of elements in the middle
+    Sequence designed for high-performance inserting/deleting of elements in the middle.
 
-    Python's list and other stdlib sequence types by default need a sequence of objects -
+    Python's list and other stdlib sequence types store a contiguous sequence of objects,
     so there is no easy sequence that allows arbitrary insertion or erasing of items
     in the middle of the body without a huge performance cost, as any insertion or
-    deleting implies copying over all the remaining elements of the sequence to another
+    deletion implies copying over all the remaining elements of the sequence to another
     position.
 
     PagedList amortizes that by holding several "pages" with sequence parts, so that each
@@ -53,15 +54,18 @@ class PagedList(MutableSequence):
 
     """
 
-    # Change this to True on an instance if slices should be PagedList -
-    # otherwise they will be unpaged.
+    # Change this to True on an instance if slices should be PagedList —
+    # otherwise they will be plain (un-paged) sequences.
 
     slice_to_paged = False
 
     _lock_pagesize = False
 
     def __new__(cls, *args, **kw):
-        warnings.warn("PagedList implementation currently have unfixed bugs. It is use in production is not recomended")
+        warnings.warn(
+            "PagedList implementation currently has unfixed bugs. "
+            "Its use in production is not recommended."
+        )
         return super().__new__(cls)
 
     def __init__(self, sequence=None, pagesize=1000, page_class=list):
@@ -73,8 +77,8 @@ class PagedList(MutableSequence):
         self.page_class = page_class
         # DefaultList is used because when computing slices that extend to
         # self.END the page number will be one more than the actual existing pages.
-        # (and len(self.pages) is super-usefull to keep track of the actual number of
-        # pages
+        # (and len(self.pages) is super-useful to keep track of the actual number of
+        # pages)
         self.pages = DefaultList(default_factory=_empty_page, append_on_extra=True)
         self._dirt_log = []
 
@@ -109,7 +113,7 @@ class PagedList(MutableSequence):
             self._append_page(self.page_class(sequence[page_start: page_start + self.pagesize]))
 
     def _append_page(self, chunk):
-        page = Page()
+        page = _Page()
         # page.start = len(self.pages) * self.pagesize
         page.data = chunk
         self.pages.append(page)
@@ -146,7 +150,7 @@ class PagedList(MutableSequence):
             return 0
         return self._dirt_log[dirt_record][1]
 
-    def _get_indexes(self, index):
+    def _get_indices(self, index):
         page_number= index // self.pagesize
         if not self._dirt_log:
             return page_number,  index % self.pagesize
@@ -178,8 +182,8 @@ class PagedList(MutableSequence):
         s_start, s_stop, s_step = slice_.indices(len(self))
         s_stop = s_start + (s_stop - s_start) - (s_stop - s_start) % s_step
 
-        lower_page, start_index = self._get_indexes(s_start)
-        upper_page, end_index = self._get_indexes(s_stop)
+        lower_page, start_index = self._get_indices(s_start)
+        upper_page, end_index = self._get_indices(s_stop)
         middle_pages = list(range(lower_page + 1, upper_page))
 
         return lower_page, start_index, middle_pages, upper_page, end_index
@@ -214,15 +218,15 @@ class PagedList(MutableSequence):
                     page_class = self.page_class
                 ))
             else:
-                return self._class(
+                return self.__class__(
                     self.pages[lower_page].data[start_index: end_index],
-                    pagesize = self.pagesize,
-                    page_class = self.page_class
+                    pagesize=self.pagesize,
+                    page_class=self.page_class,
                 )
 
         if index < 0:
             index += len(self)
-        page_number, page_index = self._get_indexes(index)
+        page_number, page_index = self._get_indices(index)
         return self.pages[page_number].data[page_index]
 
     def __setitem__(self, index, value):
@@ -267,7 +271,7 @@ class PagedList(MutableSequence):
                         else:
                             # need to insert new page(s)
                             for j, start in enumerate(range(start, end, self.pagesize), page_num + 1):
-                                new_page = Page()
+                                new_page = _Page()
                                 new_page.data = self.page_class(values[start: min(start + self.pagesize, end)])
                                 self.pages.insert(j, new_page)
 
@@ -290,7 +294,7 @@ class PagedList(MutableSequence):
 
         if index < 0:
             index += len(self)
-        page_number, page_index = self._get_indexes(index)
+        page_number, page_index = self._get_indices(index)
         self.pages[page_number].data[page_index] = value
 
     def __delitem__(self, index):
@@ -316,7 +320,7 @@ class PagedList(MutableSequence):
 
                 return
 
-        page_number, page_index = self._get_indexes(index)
+        page_number, page_index = self._get_indices(index)
         del self.pages[page_number].data[page_index]
         self._adjust_dirt(page_number, -1)
 
@@ -325,7 +329,7 @@ class PagedList(MutableSequence):
         return self.pagesize * last_page_number + len(self.pages[-1].data) + self._get_offset_for_page(last_page_number)
 
     def insert(self, index, value):
-        page_number, page_index = self._get_indexes(index)
+        page_number, page_index = self._get_indices(index)
         self.pages[page_number].data.insert(page_index, value)
         self._adjust_dirt(page_number, +1)
 

@@ -2,7 +2,7 @@ from functools import wraps
 
 _sentinel = object()
 
-def method_with_slice(method):
+def _method_with_slice(method):
 
     def _getitem(self, indices, slice_):
         results = []
@@ -65,7 +65,7 @@ def sliceable(cls):
         method = getattr(cls, method_name, _sentinel)
         if method is _sentinel:
             continue
-        setattr(cls, method_name, method_with_slice(method))
+        setattr(cls, method_name, _method_with_slice(method))
     return cls
 
 class SliceableSequenceMixin:
@@ -75,4 +75,4 @@ class SliceableSequenceMixin:
         super().__init_subclass__(*args, **kwargs)
 
 
-# TODO: have a method decorator for indivitual __getitem__, etc...
+# TODO: have a method decorator for individual __getitem__, etc...
