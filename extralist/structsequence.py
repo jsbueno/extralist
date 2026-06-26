@@ -24,9 +24,9 @@ class _StructItem(object):
 
     def _refresh(self):
         if self._index is not None:
-            self._p_cache = self._sequence_class._todict(index=self._index)
+            self._p_cache = self._sequence_class._to_dict(index=self._index)
         else:
-            self._p_cache = self._sequence_class._todict(values=self._values)
+            self._p_cache = self._sequence_class._to_dict(values=self._values)
 
     @property
     def _cache(self):
@@ -121,7 +121,7 @@ class StructSequence(MutableSequence):
     def __getitem__(self, index):
         return _StructItem(self, index=index)
 
-    def _todict(self, index=None, values=None):
+    def _to_dict(self, index=None, values=None):
         if index is not None:
             size = self.__sizeof__()
             values = self.data[size * index: (index + 1) * size]

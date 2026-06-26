@@ -38,10 +38,10 @@ class DoubleLinkedList(MutableSequence):
             "Its use in production is not recommended."
         )
 
-        return cls._inner_new__(iter(initial or []))
+        return cls._inner_new(iter(initial or []))
 
     @classmethod
-    def _inner_new__(cls, initial=None, length_marker=None, lock=None, prev=None):
+    def _inner_new(cls, initial=None, length_marker=None, lock=None, prev=None):
         self =  super().__new__(cls)
         self.lock = lock if lock else RLock()
         if length_marker is None:
@@ -58,7 +58,7 @@ class DoubleLinkedList(MutableSequence):
             self._len[0] += 1
             self.value = value
             if prev is not _sentinel:
-                self.next = cls._inner_new__(initial, length_marker=self._len, lock=self.lock, prev=self)
+                self.next = cls._inner_new(initial, length_marker=self._len, lock=self.lock, prev=self)
         else:
             if prev is None:
                 #  We've been created as an empty list
@@ -116,13 +116,13 @@ class DoubleLinkedList(MutableSequence):
             nodes_to_kill = self._get_slice(indices, inplace=True)
             impersonate = None
             for node in nodes_to_kill:
-                next_living = node._del_self_and_be_happy()
+                next_living = node._unlink_self()
                 if self._empty_self():
                     return
-                if impersonate is None or not impersonate._isalive:
+                if impersonate is None or not impersonate._is_alive:
                     # think del dlist[0::2] -> first member must become previous dlist[1]
                     impersonate = next_living
-            if not self._isalive:
+            if not self._is_alive:
                 # oh noes, we have been killed
                 self._impersonate(impersonate)
 
@@ -147,13 +147,13 @@ class DoubleLinkedList(MutableSequence):
             node.value = item
 
     @property
-    def _isalive(self):
+    def _is_alive(self):
         return getattr(self, "value", _sentinel) is not _sentinel
 
     def _impersonate(self, node):
         # we forget about ourselves, and become the next
         # should only be called when we've already killed ourselves
-        if not node._isalive:
+        if not node._is_alive:
             raise RuntimeError("Cannot be replaced by a killed node")
         self.value = node.value
         self.next = node.next
@@ -166,13 +166,13 @@ class DoubleLinkedList(MutableSequence):
         if len(self):
             return False
         with self.lock:
-            if self._isalive:
+            if self._is_alive:
                 del self.value
                 del self.next
                 del self.prev
             return True
 
-    def _del_self_and_be_happy(self):
+    def _unlink_self(self):
         with self.lock:
             self._len[0] -= 1
             if self._empty_self():
@@ -235,7 +235,7 @@ class DoubleLinkedList(MutableSequence):
         func = self._prepare_search(index)
         with self.lock:
             node = func(index)
-            new_node = DoubleLinkedList._inner_new__(iter([value]), length_marker=self._len, lock=self.lock, prev=_sentinel)
+            new_node = DoubleLinkedList._inner_new(iter([value]), length_marker=self._len, lock=self.lock, prev=_sentinel)
             if index == 0:
                 # new_node should take our place on the container
                 # so the new node actually carries our old value,

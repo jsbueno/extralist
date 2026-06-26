@@ -201,14 +201,14 @@ def test_slice_del_(name, input, result):
 
 
 @pytest.mark.parametrize("name,input,value, result", [
-   ("single_beggining", (0, 1,), [4], [4, 1, 2, 3]),
+   ("single_beginning", (0, 1,), [4], [4, 1, 2, 3]),
    ("single_middle", (2, 3,), [4], [0, 1, 4, 3]),
-   ("multi_beggining", (0, 3,), [4, 5, 6], [4, 5, 6, 3]),
+   ("multi_beginning", (0, 3,), [4, 5, 6], [4, 5, 6, 3]),
    ("multi_middle", (1, 3,), [4, 5,], [0, 4, 5, 3]),
    ("multi_end", (2, None,), [4, 5,], [0, 1, 4, 5]),
-   ("enlarge_beggining", (0, 2,), [4, 5, 6, 7, 8], [4, 5, 6, 7, 8, 2, 3]),
-   ("delete_beggining", (0, 2,), [], [2, 3]),
-   ("shorten_beggining", (0, 2,), [4, ], [4, 2, 3]),
+   ("enlarge_beginning", (0, 2,), [4, 5, 6, 7, 8], [4, 5, 6, 7, 8, 2, 3]),
+   ("delete_beginning", (0, 2,), [], [2, 3]),
+   ("shorten_beginning", (0, 2,), [4, ], [4, 2, 3]),
    ("enlarge_middle", (1, 2,), [4, 5, 6,], [0, 4, 5, 6, 2, 3]),
    ("delete_middle", (1, 2,), [], [0, 2, 3]),
    ("shorten_middle", (1, 3,), [4,], [0, 4, 3]),
