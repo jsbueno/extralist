@@ -277,4 +277,14 @@ def test_rotate_minus_5():
     assert list(d) == [6, 7 ,8 , 9, 10, 1, 2, 3, 4, 5]
 
 
-# TODO: tests using slices
+def test_slice_assignment_preserves_backward_links():
+    d = DoubleLinkedList([0, 1, 2, 3])
+    d[1:3] = [8, 9, 10]
+    assert list(d) == [0, 8, 9, 10, 3]
+    backwards_path_get_all_values(d)
+
+
+def test_out_of_range_get_raises():
+    d = DoubleLinkedList([0, 1])
+    with pytest.raises(IndexError):
+        _ = d[2]

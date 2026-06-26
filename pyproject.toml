@@ -1,24 +1,25 @@
 [build-system]
-requires = ["setuptools>=74", "wheel"]
+requires = ["setuptools>=74"]
 build-backend = "setuptools.build_meta"
-
-[tool.setuptools]
-include-package-data = true
-packages = ["extralist"]
-
-[tool.setuptools.dynamic]
-version = {attr = "extralist.__version__"}
 
 [project]
 name = "extralist"
 dynamic = ["version"]
-description = "Enhanced, maybe useful, data containers and utilities implementing sequence tupes"
+description = "Enhanced, maybe useful, data containers and utilities implementing sequence types"
 readme = "README.md"
 license = { file = "LICENSE" }
 authors = [
     { name = "João S. O. Bueno", email = "gwidion@gmail.com" }
 ]
-keywords = ["list", "sequence", "linked", "linkedlist", "tree", "tuple", "namedtuple", "pagedlist"]
+keywords = [
+    "list",
+    "sequence",
+    "linked",
+    "linkedlist",
+    "linked-list",
+    "pagedlist",
+    "paged-list",
+]
 requires-python = ">=3.10"
 dependencies = []
 classifiers = [
@@ -38,8 +39,69 @@ classifiers = [
 ]
 
 [project.optional-dependencies]
-test = ["pytest", "pytest-benchmark"]
+test = [
+    "pytest>=8",
+    "pytest-benchmark>=4",
+]
+# Full local/dev install: tests + lint + coverage (also mirrored in [dependency-groups])
+dev = [
+    "extralist[test]",
+    "pytest-cov>=5",
+    "ruff>=0.8",
+]
 
 [project.urls]
 Homepage = "https://github.com/jsbueno/extralist"
+Repository = "https://github.com/jsbueno/extralist"
+Issues = "https://github.com/jsbueno/extralist/issues"
 
+[dependency-groups]
+dev = [
+    "pytest>=8",
+    "pytest-benchmark>=4",
+    "pytest-cov>=5",
+    "ruff>=0.8",
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["extralist*"]
+exclude = ["tests*"]
+
+[tool.setuptools.dynamic]
+version = { attr = "extralist.version.__version__" }
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+addopts = ["-ra"]
+filterwarnings = [
+    "ignore:DoubleLinkedList implementation currently have unfixed bugs:UserWarning",
+    "ignore:PagedList implementation currently have unfixed bugs:UserWarning",
+]
+
+[tool.coverage.run]
+source = ["extralist"]
+branch = true
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = false
+exclude_lines = [
+    "pragma: no cover",
+    "raise NotImplementedError",
+]
+
+[tool.ruff]
+target-version = "py310"
+line-length = 100
+src = ["extralist", "tests"]
+
+[tool.ruff.lint]
+select = [
+    "E",
+    "F",
+    "I",
+    "UP",
+    "B",
+]

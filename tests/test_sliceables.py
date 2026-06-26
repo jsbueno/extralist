@@ -1,7 +1,8 @@
 from collections.abc import Sequence, MutableSequence
 
 import pytest
-from extralist.sliceable import SliceableSequenceMixin, sliceable
+from extralist import SliceableSequenceMixin
+from extralist.sliceable import sliceable
 
 offset = 100
 test_seq_size = 1000
