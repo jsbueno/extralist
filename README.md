@@ -1,6 +1,32 @@
 Extra Sequence Types and Helpers
 ================================
 
+## Testing
+
+Requires Python 3.10+ (CPython 3.10–3.15, plus PyPy 3.10/3.11). Test orchestration
+is configured with [tox](https://tox.wiki/) 4 in `pyproject.toml` (`[tool.tox]`).
+
+```bash
+pip install -e ".[dev]"          # includes tox; or: pip install "tox>=4.30"
+tox                              # every env in env_list whose interpreter exists
+tox run -e py314                 # one environment
+tox run -e pypy311               # PyPy
+tox run -e py315t                # free-threaded CPython 3.15, if installed
+tox run -e lint                  # ruff (extra env, not in default env_list)
+tox run -- tests/test_defaultlist.py -q   # pass args through to pytest
+```
+
+Install missing interpreters with your usual toolchain (`uv python install 3.12`,
+`pyenv install`, distro packages, etc.) and ensure they are on `PATH` as
+`python3.XY` / `pypy3.XY`. Missing interpreters are skipped locally
+(`skip_missing_interpreters = true`).
+
+CI runs the same tox envs on GitHub Actions (`.github/workflows/tests.yml`): one
+job per interpreter via `actions/setup-python` (`allow-prereleases: true` for
+3.15) and `tox run -e <env>`. An optional `[tool.tox.gh.python]` mapping is
+included for [tox-gh](https://github.com/tox-dev/tox-gh) if you prefer plain
+`tox run` without `-e` on Actions.
+
 
 ## PagedList
 
