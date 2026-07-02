@@ -43,11 +43,13 @@ test = [
     "pytest>=8",
     "pytest-benchmark>=4",
 ]
-# Full local/dev install: tests + lint + coverage (also mirrored in [dependency-groups])
+# Full local/dev install: tests + lint + coverage + tox (also mirrored in [dependency-groups])
 dev = [
     "extralist[test]",
     "pytest-cov>=5",
     "ruff>=0.8",
+    "tox>=4.30",
+    "tox-gh>=1.5",
 ]
 
 [project.urls]
@@ -61,6 +63,8 @@ dev = [
     "pytest-benchmark>=4",
     "pytest-cov>=5",
     "ruff>=0.8",
+    "tox>=4.30",
+    "tox-gh>=1.5",
 ]
 
 [tool.setuptools.packages.find]
@@ -105,3 +109,66 @@ select = [
     "UP",
     "B",
 ]
+
+# Tox 4 native TOML config under [tool.tox].
+# Locally: install the interpreters you care about, then `tox` or `tox -e py314`.
+# Missing interpreters are skipped so a partial local toolchain still works.
+# CI selects a single env per job via `tox run -e <env>` (see .github/workflows/tests.yml).
+# Optional: install tox-gh and run plain `tox run` on GitHub Actions to auto-select
+# from [tool.tox.gh.python] instead of passing -e.
+[tool.tox]
+requires = ["tox>=4.30"]
+env_list = [
+    "py310",
+    "py311",
+    "py312",
+    "py313",
+    "py314",
+    "py315",
+    "pypy310",
+    "pypy311",
+]
+skip_missing_interpreters = true
+
+[tool.tox.env_run_base]
+description = "Run pytest under {base_python}"
+package = "wheel"
+wheel_build_env = ".pkg"
+extras = ["test"]
+commands = [
+    [
+        "pytest",
+        { replace = "posargs", default = ["-ra", "--benchmark-disable"], extend = true },
+    ],
+]
+
+[tool.tox.env.pypy310]
+base_python = ["pypy3.10"]
+
+[tool.tox.env.pypy311]
+base_python = ["pypy3.11"]
+
+# Free-threaded CPython 3.15 (python3.15t / builds reported as 3.15t by virtualenv).
+# Not in default env_list; run with: tox run -e py315t
+[tool.tox.env.py315t]
+base_python = ["python3.15t", "3.15t"]
+
+[tool.tox.env.lint]
+description = "Lint with ruff (not in default env_list; run via tox run -e lint)"
+skip_install = true
+deps = ["ruff>=0.8"]
+commands = [["ruff", "check", "extralist", "tests"]]
+
+# Optional mapping for tox-gh when running plain `tox run` under GITHUB_ACTIONS=true.
+# PyPy keys use the pypy-3.XY form that tox-gh detects via interpreter introspection.
+# Free-threaded runners match "3.15t".
+[tool.tox.gh.python]
+"3.10" = ["py310"]
+"3.11" = ["py311"]
+"3.12" = ["py312"]
+"3.13" = ["py313"]
+"3.14" = ["py314"]
+"3.15" = ["py315"]
+"3.15t" = ["py315t"]
+"pypy-3.10" = ["pypy310"]
+"pypy-3.11" = ["pypy311"]

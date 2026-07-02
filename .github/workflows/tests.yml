@@ -1,0 +1,84 @@
+name: Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: ${{ matrix.name }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: CPython 3.10
+            python-version: "3.10"
+            toxenv: py310
+          - name: CPython 3.11
+            python-version: "3.11"
+            toxenv: py311
+          - name: CPython 3.12
+            python-version: "3.12"
+            toxenv: py312
+          - name: CPython 3.13
+            python-version: "3.13"
+            toxenv: py313
+          - name: CPython 3.14
+            python-version: "3.14"
+            toxenv: py314
+          - name: CPython 3.15
+            python-version: "3.15"
+            toxenv: py315
+          - name: PyPy 3.10
+            python-version: "pypy3.10"
+            toxenv: pypy310
+          - name: PyPy 3.11
+            python-version: "pypy3.11"
+            toxenv: pypy311
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ matrix.python-version }}
+          # Needed for 3.15 while it is still alpha/beta on the runner images.
+          allow-prereleases: true
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Install tox
+        run: python -m pip install "tox>=4.30"
+
+      - name: Run tests
+        run: tox run -e ${{ matrix.toxenv }}
+
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.14"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Install tox
+        run: python -m pip install "tox>=4.30"
+
+      - name: Run ruff via tox
+        run: tox run -e lint
